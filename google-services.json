@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "987854910764",
+    "project_id": "cioc-antidoping",
+    "storage_bucket": "cioc-antidoping.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:987854910764:android:b30d2043c77ad212252889",
+        "android_client_info": {
+          "package_name": "com.cioc.antidoping"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBCrdh0-P_P3968jW11AL-TpoCaQ0PjXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

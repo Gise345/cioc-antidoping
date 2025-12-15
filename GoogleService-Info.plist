@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBRs1jM1AsXDT4PU0cC6jrZ4CtzZCiFl7k</string>
+	<key>GCM_SENDER_ID</key>
+	<string>987854910764</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.cioc.antidoping</string>
+	<key>PROJECT_ID</key>
+	<string>cioc-antidoping</string>
+	<key>STORAGE_BUCKET</key>
+	<string>cioc-antidoping.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:987854910764:ios:17fed5238d039699252889</string>
+</dict>
+</plist>
