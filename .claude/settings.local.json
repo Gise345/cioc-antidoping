@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(npx expo start --clear)",
+      "Bash(npx expo start:*)",
+      "Bash(npm ls:*)",
+      "Bash(dir node_modules@react-native-communitydatetimepickerpackage.json)",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(if not exist \"C:\\\\cioc-antidoping\\\\src\\\\hooks\" mkdir \"C:\\\\cioc-antidoping\\\\src\\\\hooks\")",
+      "Bash(del:*)",
+      "Bash(if not exist \"C:\\\\cioc-antidoping\\\\src\\\\utils\" mkdir \"C:\\\\cioc-antidoping\\\\src\\\\utils\")",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase use:*)",
+      "Bash(firebase apps:list:*)",
+      "Bash(firebase apps:sdkconfig:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase auth:export:*)",
+      "Bash(gcloud --version:*)",
+      "Bash(gcloud auth application-default login:*)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

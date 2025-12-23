@@ -1,0 +1,183 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "athletes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sport_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "last_name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "athletes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "testing_pool_status", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_quarters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "year", "order": "DESCENDING" },
+        { "fieldPath": "quarter", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_quarters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_quarters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "filing_deadline", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_locations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "is_default", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_locations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "usage_count", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_daily_slots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "quarter_id", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_daily_slots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_daily_slots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "is_complete", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_templates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "is_default", "order": "DESCENDING" },
+        { "fieldPath": "usage_count", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_templates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "competitions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "start_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "competitions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "start_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "is_read", "order": "ASCENDING" },
+        { "fieldPath": "sent_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "sent_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "athlete_id", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "entity_type", "order": "ASCENDING" },
+        { "fieldPath": "entity_id", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "action", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "whereabouts_daily_slots",
+      "fieldPath": "date",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION" },
+        { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }
+      ]
+    },
+    {
+      "collectionGroup": "whereabouts_quarters",
+      "fieldPath": "filing_deadline",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION" }
+      ]
+    }
+  ]
+}

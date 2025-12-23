@@ -1,0 +1,342 @@
+rules_version = '2';
+
+/**
+ * CIOC Athlete Whereabouts App
+ * Firestore Security Rules
+ *
+ * Collections:
+ * - users: User authentication profiles
+ * - athletes: Athlete personal information
+ * - sports: List of supported sports
+ * - whereabouts_quarters: Quarterly whereabouts submissions
+ * - whereabouts_locations: Athlete saved locations
+ * - whereabouts_daily_slots: Daily 60-minute slots
+ * - whereabouts_templates: Weekly pattern templates
+ * - competitions: Athlete competitions
+ * - notifications: Push notifications
+ * - notification_preferences: User notification settings
+ * - audit_logs: Compliance audit trail
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================================
+    // HELPER FUNCTIONS
+    // ========================================================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the document owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user has admin role
+    function isAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+    }
+
+    // Check if user is a super admin
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    // Validate timestamp is server time
+    function isValidTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
+
+    // Check if a field hasn't changed
+    function fieldUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // ========================================================================
+    // USERS COLLECTION
+    // Path: /users/{userId}
+    // ========================================================================
+    match /users/{userId} {
+      // Allow any authenticated user to read (for admin listing, role checks)
+      // App-level logic handles role-based access
+      allow read: if isAuthenticated();
+
+      // Allow creating user documents (on signup or admin creating)
+      allow create: if isAuthenticated();
+
+      // Users can update their own non-sensitive fields, admins can update all
+      allow update: if (isOwner(userId) &&
+                        fieldUnchanged('role') &&
+                        fieldUnchanged('is_active')) ||
+                       isAdmin();
+
+      // Only super admins can delete users
+      allow delete: if isSuperAdmin();
+    }
+
+    // ========================================================================
+    // ATHLETES COLLECTION
+    // Path: /athletes/{athleteId}
+    // ========================================================================
+    match /athletes/{athleteId} {
+      // Allow any authenticated user to read (for admin listing, own profile)
+      // App-level logic handles role-based access
+      allow read: if isAuthenticated();
+
+      // Athletes can create their own profile, admins can create for others
+      allow create: if isAuthenticated();
+
+      // Athletes can update their own profile (except testing pool status)
+      allow update: if (isOwner(athleteId) &&
+                        fieldUnchanged('testing_pool_status') &&
+                        fieldUnchanged('status')) ||
+                       isAdmin();
+
+      // Only admins can delete athlete profiles
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // SPORTS COLLECTION
+    // Path: /sports/{sportId}
+    // ========================================================================
+    match /sports/{sportId} {
+      // Everyone can read sports (for registration dropdown)
+      allow read: if true;
+
+      // Only admins can write sports
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // WHEREABOUTS QUARTERS COLLECTION
+    // Path: /whereabouts_quarters/{quarterId}
+    // ========================================================================
+    match /whereabouts_quarters/{quarterId} {
+      // Athletes can read their own quarters, admins can read all
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Athletes can create their own quarters
+      allow create: if isAuthenticated() &&
+                       request.resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can update their own non-locked quarters
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid &&
+                       resource.data.status != 'locked';
+
+      // Only admins can delete quarters
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // WHEREABOUTS LOCATIONS COLLECTION
+    // Path: /whereabouts_locations/{locationId}
+    // ========================================================================
+    match /whereabouts_locations/{locationId} {
+      // Athletes can read their own locations, admins can read all
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Athletes can create their own locations
+      allow create: if isAuthenticated() &&
+                       request.resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can update their own locations
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can delete their own locations
+      allow delete: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+    }
+
+    // ========================================================================
+    // HOME LOCATIONS COLLECTION
+    // Path: /home_locations/{athleteId}
+    // ========================================================================
+    match /home_locations/{athleteId} {
+      // Athletes can read their own home location
+      allow read: if isOwner(athleteId) || isAdmin();
+
+      // Athletes can create/update their own home location
+      allow create, update: if isOwner(athleteId);
+
+      // Athletes can delete their own home location
+      allow delete: if isOwner(athleteId);
+    }
+
+    // ========================================================================
+    // TRAINING LOCATIONS COLLECTION
+    // Path: /training_locations/{athleteId}
+    // ========================================================================
+    match /training_locations/{athleteId} {
+      // Athletes can read their own training location
+      allow read: if isOwner(athleteId) || isAdmin();
+
+      // Athletes can create/update their own training location
+      allow create, update: if isOwner(athleteId);
+
+      // Athletes can delete their own training location
+      allow delete: if isOwner(athleteId);
+    }
+
+    // ========================================================================
+    // GYM LOCATIONS COLLECTION
+    // Path: /gym_locations/{athleteId}
+    // ========================================================================
+    match /gym_locations/{athleteId} {
+      // Athletes can read their own gym location
+      allow read: if isOwner(athleteId) || isAdmin();
+
+      // Athletes can create/update their own gym location
+      allow create, update: if isOwner(athleteId);
+
+      // Athletes can delete their own gym location
+      allow delete: if isOwner(athleteId);
+    }
+
+    // ========================================================================
+    // WHEREABOUTS DAILY SLOTS COLLECTION
+    // Path: /whereabouts_daily_slots/{slotId}
+    // ========================================================================
+    match /whereabouts_daily_slots/{slotId} {
+      // Athletes can read their own slots, admins can read all
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Athletes can create slots for their own quarters
+      allow create: if isAuthenticated() &&
+                       request.resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can update their own slots (for non-submitted quarters)
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+
+      // Only admins can delete slots
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // WHEREABOUTS TEMPLATES COLLECTION
+    // Path: /whereabouts_templates/{templateId}
+    // ========================================================================
+    match /whereabouts_templates/{templateId} {
+      // Athletes can read their own templates, admins can read all
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Athletes can create their own templates
+      allow create: if isAuthenticated() &&
+                       request.resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can update their own templates
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can delete their own templates
+      allow delete: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+    }
+
+    // ========================================================================
+    // COMPETITIONS COLLECTION
+    // Path: /competitions/{competitionId}
+    // ========================================================================
+    match /competitions/{competitionId} {
+      // Athletes can read their own competitions, admins can read all
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Athletes can create their own competitions
+      allow create: if isAuthenticated() &&
+                       request.resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can update their own competitions
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+
+      // Athletes can delete their own competitions
+      allow delete: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid;
+    }
+
+    // ========================================================================
+    // NOTIFICATIONS COLLECTION
+    // Path: /notifications/{notificationId}
+    // ========================================================================
+    match /notifications/{notificationId} {
+      // Athletes can read their own notifications
+      // Note: Client queries must filter by athlete_id for security
+      allow read: if isAuthenticated();
+
+      // Only system (admin) can create notifications
+      allow create: if isAdmin();
+
+      // Athletes can only mark as read
+      allow update: if isAuthenticated() &&
+                       resource.data.athlete_id == request.auth.uid &&
+                       request.resource.data.keys().hasOnly(['is_read', 'read_at', 'updated_at']);
+
+      // Only admins can delete notifications
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // NOTIFICATION PREFERENCES COLLECTION
+    // Path: /notification_preferences/{userId}
+    // ========================================================================
+    match /notification_preferences/{userId} {
+      // Users can read their own preferences
+      allow read: if isOwner(userId);
+
+      // Users can create their own preferences
+      allow create: if isOwner(userId);
+
+      // Users can update their own preferences
+      allow update: if isOwner(userId);
+
+      // Users can delete their own preferences
+      allow delete: if isOwner(userId);
+    }
+
+    // ========================================================================
+    // AUDIT LOGS COLLECTION
+    // Path: /audit_logs/{logId}
+    // ========================================================================
+    match /audit_logs/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+
+      // System can create audit logs (via cloud functions or authenticated users)
+      allow create: if isAuthenticated();
+
+      // No one can update or delete audit logs (immutable)
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // ADMIN COLLECTIONS
+    // ========================================================================
+
+    // System configuration (app settings, feature flags)
+    match /system_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // Analytics aggregates
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+  }
+}
