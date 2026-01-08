@@ -77,8 +77,8 @@ export default function AthleteDetailScreen() {
 
   // Check if this is a newly created athlete
   useEffect(() => {
-    if (lastCreated && lastCreated.athleteId === id) {
-      setTempPassword(lastCreated.temporaryPassword);
+    if (lastCreated && lastCreated.userId === id) {
+      setTempPassword(lastCreated.tempPassword);
       dispatch(clearLastCreatedAthlete());
     }
   }, [lastCreated, id, dispatch]);
@@ -93,15 +93,15 @@ export default function AthleteDetailScreen() {
 
   // Reset password handler
   const handleResetPassword = useCallback(async () => {
-    if (!id) return;
+    if (!id || !athlete) return;
     setActionLoading(true);
     try {
-      const result = await dispatch(resetPasswordAsync(id)).unwrap();
-      setTempPassword(result.temporaryPassword);
+      const result = await dispatch(resetPasswordAsync({ athleteId: id, email: athlete.user.email })).unwrap();
+      setTempPassword(result.tempPassword);
       setResetPasswordDialogVisible(false);
       Alert.alert(
         'Password Reset',
-        `A password reset email has been sent.\n\nTemporary Password: ${result.temporaryPassword}\n\nPlease share this with the athlete securely.`,
+        `A password reset email has been sent.\n\nTemporary Password: ${result.tempPassword}\n\nPlease share this with the athlete securely.`,
         [{ text: 'OK' }]
       );
     } catch (error) {
@@ -109,7 +109,7 @@ export default function AthleteDetailScreen() {
     } finally {
       setActionLoading(false);
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, athlete]);
 
   // Deactivate handler
   const handleDeactivate = useCallback(async () => {
@@ -144,7 +144,12 @@ export default function AthleteDetailScreen() {
 
   // Navigate to edit
   const handleEdit = useCallback(() => {
-    router.push(`/admin/edit-athlete/${id}`);
+    router.push(`/admin/edit-athlete/${id}` as any);
+  }, [router, id]);
+
+  // Navigate to view athlete's dashboard
+  const handleViewAthleteDashboard = useCallback(() => {
+    router.push(`/admin/athlete-dashboard/${id}` as any);
   }, [router, id]);
 
   if (loading && !athlete) {
@@ -288,7 +293,7 @@ export default function AthleteDetailScreen() {
               value={athlete.user.requires_password_change ? 'Yes' : 'No'}
             />
             <Divider style={styles.divider} />
-            <InfoRow icon="time-outline" label="Created" value={athlete.user.created_at} />
+            <InfoRow icon="time-outline" label="Created" value={typeof athlete.user.created_at === 'string' ? new Date(athlete.user.created_at).toLocaleDateString() : 'Unknown'} />
           </Card.Content>
         </Card>
 
@@ -337,6 +342,15 @@ export default function AthleteDetailScreen() {
         {/* Actions */}
         <Text style={styles.sectionTitle}>Actions</Text>
         <View style={styles.actionsContainer}>
+          <Button
+            mode="contained"
+            icon="eye"
+            onPress={handleViewAthleteDashboard}
+            style={styles.actionButton}
+            buttonColor={COLORS.primary}
+          >
+            View Athlete Dashboard
+          </Button>
           <Button
             mode="outlined"
             icon="key"
@@ -446,7 +460,7 @@ const styles = StyleSheet.create({
   athleteName: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.text.primary,
+    color: '#FFFFFF',
   },
   statusBadge: {
     fontSize: 12,
@@ -506,6 +520,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#000000',
   },
   infoRow: {
     flexDirection: 'row',
@@ -566,7 +581,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.text.primary,
+    color: '#FFFFFF',
     marginBottom: SPACING.sm,
     marginTop: SPACING.sm,
   },

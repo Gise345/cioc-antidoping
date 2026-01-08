@@ -301,7 +301,7 @@ export default function AthletesScreen() {
         <EmptyState
           icon="people-outline"
           title="No Athletes Found"
-          message={
+          description={
             hasActiveFilters
               ? 'Try adjusting your filters'
               : 'No athletes have been created yet'

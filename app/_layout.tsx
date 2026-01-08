@@ -3,8 +3,8 @@
  * Main navigation structure with Redux-powered auth flow
  */
 
-import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -25,14 +25,22 @@ import {
   selectIsAuthenticated,
   selectIsInitialized,
   selectRequiresPasswordChange,
+  selectUserProfile,
 } from '@/src/store';
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+// Prevent splash screen auto-hide, but with safety timeout
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore errors - splash screen might already be hidden
+});
+
+// Force hide splash screen after 5 seconds no matter what
+setTimeout(() => {
+  SplashScreen.hideAsync().catch(() => {});
+}, 5000);
 
 export const unstable_settings = {
-  // Ensure auth screens are used as the initial route when not authenticated
-  initialRouteName: 'auth',
+  // Use index as the initial route - it handles auth redirects
+  initialRouteName: 'index',
 };
 
 // Custom navigation themes
@@ -63,10 +71,11 @@ const CustomDarkTheme = {
 /**
  * Loading screen shown during auth initialization
  */
-function LoadingScreen() {
+function LoadingScreen({ message = 'Loading...' }: { message?: string }) {
   return (
     <View style={styles.loadingContainer}>
       <ActivityIndicator size="large" color={BrandColors.primary} />
+      <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
 }
@@ -78,52 +87,78 @@ function AuthFlowHandler({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
   const dispatch = useAppDispatch();
+  const [initStarted, setInitStarted] = useState(false);
+  const [initTimeout, setInitTimeout] = useState(false);
 
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isInitialized = useAppSelector(selectIsInitialized);
   const requiresPasswordChange = useAppSelector(selectRequiresPasswordChange);
+  const userProfile = useAppSelector(selectUserProfile);
 
-  // Initialize auth on mount
+  // Initialize auth on mount with timeout
   useEffect(() => {
+    if (initStarted) return;
+    setInitStarted(true);
+
+    console.log('[Auth] Starting initialization...');
+
     const init = async () => {
       try {
         await dispatch(initializeAuth()).unwrap();
+        console.log('[Auth] Initialization complete');
       } catch (error) {
         console.error('[Auth] Initialization error:', error);
       } finally {
-        // Hide splash screen after auth check
-        await SplashScreen.hideAsync();
+        SplashScreen.hideAsync().catch(() => {});
       }
     };
 
-    init();
-  }, [dispatch]);
+    // Timeout - if init takes too long, continue anyway
+    const timeout = setTimeout(() => {
+      console.warn('[Auth] Init timeout - continuing without full init');
+      setInitTimeout(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }, 8000);
+
+    init().finally(() => clearTimeout(timeout));
+
+    return () => clearTimeout(timeout);
+  }, [dispatch, initStarted]);
 
   // Handle auth state changes and navigation
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized && !initTimeout) return;
 
     const inAuthGroup = segments[0] === 'auth';
     const onFirstLoginScreen = segments[1] === 'first-login';
+    const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated and not already in auth screens
       console.log('[Auth] Not authenticated, redirecting to login');
       router.replace('/auth/login');
     } else if (isAuthenticated && requiresPasswordChange && !onFirstLoginScreen) {
-      // User requires password change but not on first-login screen
       console.log('[Auth] Password change required, redirecting to first-login');
       router.replace('/auth/first-login');
     } else if (isAuthenticated && !requiresPasswordChange && inAuthGroup) {
-      // Redirect to home if authenticated, no password change needed, and still in auth screens
-      console.log('[Auth] Authenticated, redirecting to home');
-      router.replace('/(tabs)/home');
+      // Wait for userProfile to be loaded before redirecting
+      if (!userProfile) {
+        console.log('[Auth] Waiting for user profile to load...');
+        return;
+      }
+      // Redirect based on user role
+      if (isAdmin) {
+        console.log('[Auth] Admin authenticated, redirecting to admin dashboard');
+        router.replace('/admin/dashboard');
+      } else {
+        console.log('[Auth] Athlete authenticated, redirecting to home');
+        router.replace('/(tabs)/home');
+      }
     }
-  }, [isAuthenticated, isInitialized, requiresPasswordChange, segments, router]);
+  }, [isAuthenticated, isInitialized, initTimeout, requiresPasswordChange, userProfile, segments, router]);
 
-  // Show loading while initializing
-  if (!isInitialized) {
-    return <LoadingScreen />;
+  // Show loading while initializing (but with timeout fallback)
+  if (!isInitialized && !initTimeout) {
+    return <LoadingScreen message="Initializing..." />;
   }
 
   return <>{children}</>;
@@ -169,6 +204,14 @@ function NavigationLayout() {
               animation: 'slide_from_right',
             }}
           >
+          {/* Index - Entry point */}
+          <Stack.Screen
+            name="index"
+            options={{
+              headerShown: false,
+            }}
+          />
+
           {/* Auth Stack */}
           <Stack.Screen
             name="auth"
@@ -230,11 +273,28 @@ function NavigationLayout() {
  * Root Layout - Redux Provider wrapper
  */
 export default function RootLayout() {
+  const [persistTimeout, setPersistTimeout] = useState(false);
+
+  // Add timeout for PersistGate - if it takes too long, render anyway
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.warn('[RootLayout] PersistGate timeout - rendering without persistence');
+      setPersistTimeout(true);
+    }, 3000); // 3 second timeout for persist
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Provider store={store}>
-      <PersistGate loading={<LoadingScreen />} persistor={persistor}>
+      {persistTimeout ? (
+        // Render without waiting for persistence
         <NavigationLayout />
-      </PersistGate>
+      ) : (
+        <PersistGate loading={<LoadingScreen message="Loading app data..." />} persistor={persistor}>
+          <NavigationLayout />
+        </PersistGate>
+      )}
     </Provider>
   );
 }
@@ -244,6 +304,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: LightColors.background,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
   },
 });

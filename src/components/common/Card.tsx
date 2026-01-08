@@ -20,8 +20,8 @@ import {
 } from '@/src/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-interface CardProps {
-  children: React.ReactNode;
+export interface CardProps {
+  children?: React.ReactNode;
   style?: ViewStyle;
   /** Card padding */
   padding?: 'none' | 'small' | 'medium' | 'large';

@@ -29,7 +29,7 @@ import { Text } from './Text';
 type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'success';
 type ButtonSize = 'small' | 'medium' | 'large';
 
-interface ButtonProps extends Omit<PressableProps, 'children'> {
+export interface ButtonProps extends Omit<PressableProps, 'children'> {
   /** Button text */
   title: string;
   /** Button variant */

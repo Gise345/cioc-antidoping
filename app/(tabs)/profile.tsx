@@ -471,11 +471,11 @@ export default function ProfileScreen() {
         <View style={styles.logoutSection}>
           <Button
             title="Sign Out"
-            variant="secondary"
+            variant="danger"
             onPress={handleLogout}
             fullWidth
             leftIcon={
-              <Ionicons name="log-out-outline" size={20} color={BrandColors.primary} />
+              <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
             }
           />
         </View>

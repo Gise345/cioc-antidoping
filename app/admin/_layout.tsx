@@ -37,9 +37,10 @@ export default function AdminLayout() {
         headerStyle: {
           backgroundColor: colors.surface,
         },
-        headerTintColor: colors.text,
+        headerTintColor: colors.textPrimary,
         headerTitleStyle: {
           fontWeight: '600',
+          color: colors.textPrimary,
         },
         contentStyle: {
           backgroundColor: colors.background,
@@ -51,7 +52,7 @@ export default function AdminLayout() {
         name="dashboard"
         options={{
           title: 'Admin Dashboard',
-          headerBackVisible: false,
+          headerBackVisible: true,
         }}
       />
       <Stack.Screen
@@ -71,6 +72,18 @@ export default function AdminLayout() {
         name="athlete/[id]"
         options={{
           title: 'Athlete Details',
+        }}
+      />
+      <Stack.Screen
+        name="athlete-dashboard/[id]"
+        options={{
+          title: 'Athlete Dashboard View',
+        }}
+      />
+      <Stack.Screen
+        name="manage-admins"
+        options={{
+          title: 'Manage Admins',
         }}
       />
     </Stack>

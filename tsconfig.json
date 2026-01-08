@@ -4,6 +4,10 @@
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
       "@/src/*": ["./src/*"],

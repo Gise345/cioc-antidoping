@@ -14,15 +14,18 @@ export {
   Caption,
   Label,
 } from './Text';
+export type { TextProps } from './Text';
 
 // Buttons
 export { Button, IconButton } from './Button';
+export type { ButtonProps } from './Button';
 
 // Inputs
 export { Input, SearchInput } from './Input';
 
 // Cards
 export { Card, PressableCard, SectionCard } from './Card';
+export type { CardProps } from './Card';
 
 // Badges
 export {

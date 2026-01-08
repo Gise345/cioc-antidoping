@@ -3,7 +3,7 @@
  * Redux state management for admin functionality
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import {
   createAthleteAccount,
   listAthletes,
@@ -602,45 +602,50 @@ export const selectAllAthletes = (state: { admin: AdminState }) =>
 
 /**
  * Select filtered athletes based on current filters
+ * Memoized selector to prevent unnecessary re-renders
  */
-export const selectFilteredAthletes = (state: { admin: AdminState }) => {
-  const { athletes, filters } = state.admin;
-
-  return athletes.filter((athlete) => {
-    // Sport filter
-    if (filters.sport && athlete.athlete.sport_id !== filters.sport) {
-      return false;
-    }
-
-    // Residence status filter
-    if (filters.residenceStatus && athlete.athlete.residence_status !== filters.residenceStatus) {
-      return false;
-    }
-
-    // Testing pool status filter
-    if (filters.testingPoolStatus && athlete.athlete.testing_pool_status !== filters.testingPoolStatus) {
-      return false;
-    }
-
-    // Status filter
-    if (filters.status && athlete.athlete.status !== filters.status) {
-      return false;
-    }
-
-    // Search query filter
-    if (filters.searchQuery) {
-      const searchLower = filters.searchQuery.toLowerCase();
-      const fullName = `${athlete.athlete.first_name} ${athlete.athlete.last_name}`.toLowerCase();
-      const email = athlete.user.email.toLowerCase();
-
-      if (!fullName.includes(searchLower) && !email.includes(searchLower)) {
+export const selectFilteredAthletes = createSelector(
+  [
+    (state: { admin: AdminState }) => state.admin.athletes,
+    (state: { admin: AdminState }) => state.admin.filters,
+  ],
+  (athletes, filters) => {
+    return athletes.filter((athlete) => {
+      // Sport filter
+      if (filters.sport && athlete.athlete.sport_id !== filters.sport) {
         return false;
       }
-    }
 
-    return true;
-  });
-};
+      // Residence status filter
+      if (filters.residenceStatus && athlete.athlete.residence_status !== filters.residenceStatus) {
+        return false;
+      }
+
+      // Testing pool status filter
+      if (filters.testingPoolStatus && athlete.athlete.testing_pool_status !== filters.testingPoolStatus) {
+        return false;
+      }
+
+      // Status filter
+      if (filters.status && athlete.athlete.status !== filters.status) {
+        return false;
+      }
+
+      // Search query filter
+      if (filters.searchQuery) {
+        const searchLower = filters.searchQuery.toLowerCase();
+        const fullName = `${athlete.athlete.first_name} ${athlete.athlete.last_name}`.toLowerCase();
+        const email = athlete.user.email.toLowerCase();
+
+        if (!fullName.includes(searchLower) && !email.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+);
 
 /**
  * Select active athletes only

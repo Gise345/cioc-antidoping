@@ -5,22 +5,20 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
+  initializeAuth,
   getAuth,
   Auth,
   User as FirebaseUser,
   onAuthStateChanged,
   signOut as firebaseSignOut,
   connectAuthEmulator,
+  getReactNativePersistence,
 } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getFirestore,
   Firestore,
   connectFirestoreEmulator,
-  enableIndexedDbPersistence,
-  CACHE_SIZE_UNLIMITED,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
 } from 'firebase/firestore';
 import {
   getStorage,
@@ -50,8 +48,9 @@ export const initializeFirebase = (): {
 } => {
   // Validate configuration
   const { valid, missing } = validateFirebaseConfig();
-  if (!valid && !__DEV__) {
-    throw new Error(`Firebase configuration missing: ${missing.join(', ')}`);
+  if (!valid) {
+    console.error(`[Firebase] Configuration missing: ${missing.join(', ')}`);
+    // Don't throw - let the app continue and show an error to the user
   }
 
   // Log config status in development
@@ -66,21 +65,25 @@ export const initializeFirebase = (): {
     console.log('[Firebase] Using existing app instance');
   }
 
-  // Initialize Auth
-  auth = getAuth(app);
-
-  // Initialize Firestore with offline persistence
+  // Initialize Auth with AsyncStorage persistence for React Native
   try {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
     });
-    console.log('[Firebase] Firestore initialized with offline persistence');
+    console.log('[Firebase] Auth initialized with AsyncStorage persistence');
   } catch (error) {
-    // Fallback to regular initialization if persistence fails
+    // If already initialized, get existing instance
+    auth = getAuth(app);
+    console.log('[Firebase] Using existing Auth instance');
+  }
+
+  // Initialize Firestore (without web-specific persistence that breaks React Native)
+  try {
     db = getFirestore(app);
-    console.log('[Firebase] Firestore initialized without persistence');
+    console.log('[Firebase] Firestore initialized');
+  } catch (error) {
+    console.error('[Firebase] Firestore initialization error:', error);
+    throw error;
   }
 
   // Initialize Storage
@@ -187,12 +190,19 @@ export const subscribeToAuthChanges = (
 };
 
 /**
- * Wait for auth state to be ready
+ * Wait for auth state to be ready (with timeout)
  */
 export const waitForAuthReady = (): Promise<FirebaseUser | null> => {
   const authInstance = getFirebaseAuth();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // Add timeout to prevent infinite hang
+    const timeout = setTimeout(() => {
+      console.warn('[Firebase] Auth ready timeout - resolving with null');
+      resolve(null);
+    }, 10000); // 10 second timeout
+
     const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+      clearTimeout(timeout);
       unsubscribe();
       resolve(user);
     });

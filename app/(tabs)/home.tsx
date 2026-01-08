@@ -44,7 +44,7 @@ import {
   applyPatternToQuarterAsync,
   selectCurrentPattern,
 } from '@/src/store/slices/whereaboutsSlice';
-import { selectUser, selectAthlete } from '@/src/store/slices/authSlice';
+import { selectUser, selectAthlete, selectIsInitialized, selectIsAuthenticated } from '@/src/store/slices/authSlice';
 import {
   fetchAllLocationsAsync,
   selectLocationCompletionStatus,
@@ -60,6 +60,8 @@ export default function HomeScreen() {
 
   const user = useSelector(selectUser);
   const athlete = useSelector(selectAthlete);
+  const isInitialized = useSelector(selectIsInitialized);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const currentQuarter = useSelector(selectCurrentQuarter);
   const daysUntilDeadline = useSelector(selectDaysUntilDeadline);
   const upcomingDeadline = useSelector(selectUpcomingDeadline);
@@ -76,18 +78,18 @@ export default function HomeScreen() {
   // Get current quarter info
   const { year: currentYear, quarter: currentQuarterName } = getCurrentQuarterInfo();
 
-  // Fetch data on mount
+  // Fetch data on mount - only after auth is fully initialized
   useEffect(() => {
-    if (user?.uid) {
+    if (isInitialized && isAuthenticated && user?.uid) {
       dispatch(fetchCurrentQuarterAsync(user.uid));
       dispatch(fetchQuartersAsync(user.uid));
       dispatch(fetchAllLocationsAsync(user.uid));
       dispatch(fetchTemplatesAsync(user.uid));
     }
-  }, [user?.uid, dispatch]);
+  }, [isInitialized, isAuthenticated, user?.uid, dispatch]);
 
   const onRefresh = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!isAuthenticated || !user?.uid) return;
     setRefreshing(true);
     await Promise.all([
       dispatch(fetchCurrentQuarterAsync(user.uid)),
@@ -96,7 +98,7 @@ export default function HomeScreen() {
       dispatch(fetchTemplatesAsync(user.uid)),
     ]);
     setRefreshing(false);
-  }, [user?.uid, dispatch]);
+  }, [isAuthenticated, user?.uid, dispatch]);
 
   const handleCreateQuarter = () => {
     router.push('/whereabouts/create-quarter');
@@ -155,7 +157,7 @@ export default function HomeScreen() {
             <Text variant="h3">{displayName}</Text>
           </View>
           <Pressable
-            onPress={() => router.push('/notifications')}
+            onPress={() => router.push('/notifications' as any)}
             style={[styles.notificationButton, { backgroundColor: colors.surfaceVariant }]}
           >
             <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
@@ -184,7 +186,7 @@ export default function HomeScreen() {
                 <Ionicons name="location" size={24} color={SemanticColors.warning} />
               </View>
               <View style={styles.locationHeaderText}>
-                <Text variant="h6">Set Up Your Locations</Text>
+                <Text variant="h6" style={{ color: '#FFFFFF' }}>Set Up Your Locations</Text>
                 <Text variant="caption" color="secondary">
                   Required before filing whereabouts
                 </Text>
@@ -204,7 +206,7 @@ export default function HomeScreen() {
                   size={20}
                   color={locationStatus.homeComplete ? SemanticColors.success : SemanticColors.warning}
                 />
-                <Text variant="body" style={styles.locationItemText}>
+                <Text variant="body" style={[styles.locationItemText, { color: '#000000' }]}>
                   Home Location
                 </Text>
                 <Text
@@ -226,7 +228,7 @@ export default function HomeScreen() {
                   size={20}
                   color={locationStatus.trainingComplete ? SemanticColors.success : SemanticColors.warning}
                 />
-                <Text variant="body" style={styles.locationItemText}>
+                <Text variant="body" style={[styles.locationItemText, { color: '#000000' }]}>
                   Training Location
                 </Text>
                 <Text
@@ -248,7 +250,7 @@ export default function HomeScreen() {
                   size={20}
                   color={locationStatus.gymComplete ? SemanticColors.success : '#9CA3AF'}
                 />
-                <Text variant="body" style={styles.locationItemText}>
+                <Text variant="body" style={[styles.locationItemText, { color: '#000000' }]}>
                   Gym Location
                 </Text>
                 <Text

@@ -175,14 +175,14 @@ const handleError = (error: unknown): AdminServiceError => {
     return {
       code: firebaseError.code,
       message: errorMessages[firebaseError.code] || firebaseError.message || 'An unexpected error occurred',
-      originalError: error,
+      // Don't store originalError - it's not serializable
     };
   }
 
   return {
     code: 'unknown',
     message: error instanceof Error ? error.message : 'An unexpected error occurred',
-    originalError: error,
+    // Don't store originalError - it's not serializable
   };
 };
 
@@ -198,6 +198,25 @@ const convertTimestampToDate = (timestamp: Timestamp | Date | undefined): Date |
   return timestamp;
 };
 
+/**
+ * Convert Firestore Timestamp to ISO string for Redux serialization
+ */
+const convertTimestampToISO = (timestamp: Timestamp | Date | string | undefined): string | undefined => {
+  if (!timestamp) return undefined;
+  if (typeof timestamp === 'string') return timestamp;
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate().toISOString();
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  // Handle plain object with seconds/nanoseconds (already serialized Timestamp)
+  if (typeof timestamp === 'object' && 'seconds' in timestamp) {
+    return new Date((timestamp as { seconds: number }).seconds * 1000).toISOString();
+  }
+  return undefined;
+};
+
 const userFromFirestore = (data: Record<string, unknown>): UserDocument => {
   return {
     email: data.email as string,
@@ -206,10 +225,10 @@ const userFromFirestore = (data: Record<string, unknown>): UserDocument => {
     phone_verified: data.phone_verified as boolean,
     is_active: data.is_active as boolean,
     requires_password_change: data.requires_password_change as boolean,
-    last_login_at: data.last_login_at as Timestamp | undefined,
+    last_login_at: convertTimestampToISO(data.last_login_at as Timestamp | undefined) as string | undefined,
     fcm_tokens: data.fcm_tokens as string[] | undefined,
-    created_at: data.created_at as Timestamp,
-    updated_at: data.updated_at as Timestamp,
+    created_at: convertTimestampToISO(data.created_at as Timestamp) as string,
+    updated_at: convertTimestampToISO(data.updated_at as Timestamp) as string,
   };
 };
 
@@ -232,8 +251,8 @@ const athleteFromFirestore = (data: Record<string, unknown>): AthleteDocument =>
     cioc_athlete_number: data.cioc_athlete_number as string | undefined,
     profile_photo_url: data.profile_photo_url as string | undefined,
     emergency_contact: data.emergency_contact as AthleteDocument['emergency_contact'],
-    created_at: data.created_at as Timestamp,
-    updated_at: data.updated_at as Timestamp,
+    created_at: convertTimestampToISO(data.created_at as Timestamp) as string,
+    updated_at: convertTimestampToISO(data.updated_at as Timestamp) as string,
   };
 };
 
@@ -813,6 +832,261 @@ export const getRecentAthletes = async (limitCount: number = 5): Promise<Athlete
     return athletes;
   } catch (error) {
     console.error('[Admin] Get recent athletes error:', error);
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+// ============================================================================
+// ADMIN USER MANAGEMENT (Super Admin Only)
+// ============================================================================
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: 'admin' | 'super_admin';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * List all admin users (super_admin only)
+ */
+export const listAdminUsers = async (): Promise<AdminUser[]> => {
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Listing admin users');
+
+    const q = query(
+      collection(db, COLLECTIONS.USERS),
+      where('role', 'in', ['admin', 'super_admin']),
+      orderBy('created_at', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    const admins: AdminUser[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      admins.push({
+        id: docSnap.id,
+        email: data.email,
+        role: data.role,
+        is_active: data.is_active ?? true,
+        created_at: convertTimestampToISO(data.created_at as Timestamp) || new Date().toISOString(),
+        updated_at: convertTimestampToISO(data.updated_at as Timestamp) || new Date().toISOString(),
+      });
+    });
+
+    console.log('[Admin] Found', admins.length, 'admin users');
+    return admins;
+  } catch (error) {
+    console.error('[Admin] List admin users error:', error);
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+/**
+ * Create a new admin account (super_admin only)
+ */
+export const createAdminAccount = async (
+  email: string,
+  role: 'admin' | 'super_admin' = 'admin'
+): Promise<{ userId: string; tempPassword: string }> => {
+  const auth = getFirebaseAuth();
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Creating admin account for:', email);
+
+    // Validate email
+    if (!email || !isValidEmail(email)) {
+      throw new AdminError('Please enter a valid email address', 'validation_error', 'email');
+    }
+
+    // Generate temporary password
+    const tempPassword = generateTemporaryPassword();
+
+    // Create Firebase Auth user
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      tempPassword
+    );
+    const firebaseUser = userCredential.user;
+    console.log('[Admin] Firebase Auth user created:', firebaseUser.uid);
+
+    // Create user document in Firestore
+    const userDoc: CreateUserDocument = {
+      email: email,
+      role: role,
+      email_verified: false,
+      phone_verified: false,
+      is_active: true,
+      requires_password_change: true,
+    };
+
+    await setDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid), {
+      ...userDoc,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    });
+
+    console.log('[Admin] Admin user document created');
+
+    return {
+      userId: firebaseUser.uid,
+      tempPassword,
+    };
+  } catch (error) {
+    console.error('[Admin] Create admin account error:', error);
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+/**
+ * Update admin role (super_admin only)
+ */
+export const updateAdminRole = async (
+  userId: string,
+  newRole: 'admin' | 'super_admin'
+): Promise<void> => {
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Updating admin role:', userId, 'to', newRole);
+
+    const userDocRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      throw new AdminError('Admin user not found', 'not_found', 'userId');
+    }
+
+    const userData = userDocSnap.data();
+    if (userData.role !== 'admin' && userData.role !== 'super_admin') {
+      throw new AdminError('User is not an admin', 'validation_error', 'role');
+    }
+
+    await updateDoc(userDocRef, {
+      role: newRole,
+      updated_at: serverTimestamp(),
+    });
+
+    console.log('[Admin] Admin role updated successfully');
+  } catch (error) {
+    console.error('[Admin] Update admin role error:', error);
+    if (error instanceof AdminError) {
+      throw error;
+    }
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+/**
+ * Deactivate admin account (super_admin only)
+ */
+export const deactivateAdminAccount = async (userId: string): Promise<void> => {
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Deactivating admin account:', userId);
+
+    const userDocRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      throw new AdminError('Admin user not found', 'not_found', 'userId');
+    }
+
+    const userData = userDocSnap.data();
+    if (userData.role !== 'admin' && userData.role !== 'super_admin') {
+      throw new AdminError('User is not an admin', 'validation_error', 'role');
+    }
+
+    await updateDoc(userDocRef, {
+      is_active: false,
+      updated_at: serverTimestamp(),
+    });
+
+    console.log('[Admin] Admin account deactivated successfully');
+  } catch (error) {
+    console.error('[Admin] Deactivate admin error:', error);
+    if (error instanceof AdminError) {
+      throw error;
+    }
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+/**
+ * Reactivate admin account (super_admin only)
+ */
+export const reactivateAdminAccount = async (userId: string): Promise<void> => {
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Reactivating admin account:', userId);
+
+    const userDocRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      throw new AdminError('Admin user not found', 'not_found', 'userId');
+    }
+
+    await updateDoc(userDocRef, {
+      is_active: true,
+      updated_at: serverTimestamp(),
+    });
+
+    console.log('[Admin] Admin account reactivated successfully');
+  } catch (error) {
+    console.error('[Admin] Reactivate admin error:', error);
+    if (error instanceof AdminError) {
+      throw error;
+    }
+    const serviceError = handleError(error);
+    throw new AdminError(serviceError.message, serviceError.code);
+  }
+};
+
+/**
+ * Remove admin privileges (demote to no role / delete user doc)
+ */
+export const removeAdminAccount = async (userId: string): Promise<void> => {
+  const db = getFirestoreDb();
+
+  try {
+    console.log('[Admin] Removing admin account:', userId);
+
+    const userDocRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      throw new AdminError('Admin user not found', 'not_found', 'userId');
+    }
+
+    // Set role to undefined/null to revoke access
+    // Or we could set is_active to false
+    await updateDoc(userDocRef, {
+      is_active: false,
+      role: 'athlete', // Demote to athlete role (no admin access)
+      updated_at: serverTimestamp(),
+    });
+
+    console.log('[Admin] Admin account removed successfully');
+  } catch (error) {
+    console.error('[Admin] Remove admin error:', error);
+    if (error instanceof AdminError) {
+      throw error;
+    }
     const serviceError = handleError(error);
     throw new AdminError(serviceError.message, serviceError.code);
   }

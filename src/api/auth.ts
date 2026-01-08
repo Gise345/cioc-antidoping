@@ -129,14 +129,14 @@ const getErrorMessage = (error: unknown): AuthServiceError => {
     return {
       code: authError.code,
       message,
-      originalError: error,
+      // Don't store originalError - it's not serializable
     };
   }
 
   return {
     code: 'unknown',
-    message: 'An unexpected error occurred. Please try again.',
-    originalError: error,
+    message: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+    // Don't store originalError - it's not serializable
   };
 };
 

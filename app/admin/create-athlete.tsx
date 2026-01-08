@@ -63,7 +63,7 @@ const INITIAL_FORM_DATA: FormData = {
   firstName: '',
   lastName: '',
   email: '',
-  phone: '+1-345-',
+  phone: '',
   dateOfBirth: new Date(2000, 0, 1),
   gender: 'male',
   nocId: 'cayman_islands',
@@ -124,8 +124,10 @@ export default function CreateAthleteScreen() {
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    if (!formData.phone || !/^\+1-345-\d{3}-\d{4}$/.test(formData.phone)) {
-      newErrors.phone = 'Phone format: +1-345-XXX-XXXX';
+    // Allow flexible phone formats: +1-345-XXX-XXXX, +1345XXXXXXX, 345XXXXXXX, XXXXXXX, etc.
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (!formData.phone || phoneDigits.length < 7 || phoneDigits.length > 15) {
+      newErrors.phone = 'Please enter a valid phone number (at least 7 digits)';
     }
 
     // Check age (must be at least 10)
@@ -282,6 +284,7 @@ export default function CreateAthleteScreen() {
                 onChangeText={(text) => updateField('firstName', text)}
                 error={!!errors.firstName}
                 style={styles.input}
+                textColor="#000000"
               />
               {errors.firstName && (
                 <HelperText type="error">{errors.firstName}</HelperText>
@@ -294,6 +297,7 @@ export default function CreateAthleteScreen() {
                 onChangeText={(text) => updateField('lastName', text)}
                 error={!!errors.lastName}
                 style={styles.input}
+                textColor="#000000"
               />
               {errors.lastName && (
                 <HelperText type="error">{errors.lastName}</HelperText>
@@ -308,6 +312,7 @@ export default function CreateAthleteScreen() {
                 autoCapitalize="none"
                 error={!!errors.email}
                 style={styles.input}
+                textColor="#000000"
               />
               {errors.email && (
                 <HelperText type="error">{errors.email}</HelperText>
@@ -321,6 +326,8 @@ export default function CreateAthleteScreen() {
                 keyboardType="phone-pad"
                 error={!!errors.phone}
                 style={styles.input}
+                textColor="#000000"
+                placeholder="e.g. +1-345-123-4567 or 3451234567"
               />
               {errors.phone && (
                 <HelperText type="error">{errors.phone}</HelperText>
@@ -376,11 +383,11 @@ export default function CreateAthleteScreen() {
                 <Picker
                   selectedValue={formData.nocId}
                   onValueChange={(value) => updateField('nocId', value)}
-                  style={styles.picker}
+                  style={[styles.picker, { color: '#000000' }]}
                 >
-                  <Picker.Item label="Select NOC..." value="" />
+                  <Picker.Item label="Select NOC..." value="" color="#000000" />
                   {NOC_LIST.map((noc) => (
-                    <Picker.Item key={noc.id} label={noc.name} value={noc.id} />
+                    <Picker.Item key={noc.id} label={noc.name} value={noc.id} color="#000000" />
                   ))}
                 </Picker>
               </View>
@@ -393,11 +400,11 @@ export default function CreateAthleteScreen() {
                 <Picker
                   selectedValue={formData.sport}
                   onValueChange={handleSportChange}
-                  style={styles.picker}
+                  style={[styles.picker, { color: '#000000' }]}
                 >
-                  <Picker.Item label="Select sport..." value="" />
+                  <Picker.Item label="Select sport..." value="" color="#000000" />
                   {SPORTS.map((sport) => (
-                    <Picker.Item key={sport.id} label={sport.name} value={sport.id} />
+                    <Picker.Item key={sport.id} label={sport.name} value={sport.id} color="#000000" />
                   ))}
                 </Picker>
               </View>
@@ -628,6 +635,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#000000',
   },
   input: {
     marginBottom: SPACING.xs,
@@ -636,7 +644,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: COLORS.text.primary,
+    color: '#000000',
     marginTop: SPACING.sm,
     marginBottom: SPACING.xs,
   },
@@ -653,7 +661,7 @@ const styles = StyleSheet.create({
   },
   radioLabel: {
     fontSize: 14,
-    color: COLORS.text.primary,
+    color: '#000000',
   },
   pickerContainer: {
     borderWidth: 1,
@@ -682,7 +690,7 @@ const styles = StyleSheet.create({
   },
   reviewValue: {
     fontSize: 14,
-    color: COLORS.text.primary,
+    color: '#000000',
     flex: 1,
   },
   errorCard: {

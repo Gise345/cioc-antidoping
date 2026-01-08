@@ -16,7 +16,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 type TypographyVariant = keyof typeof Typography;
 type TextColor = 'primary' | 'secondary' | 'tertiary' | 'inverse' | 'error' | 'success' | 'warning';
 
-interface TextProps extends RNTextProps {
+export interface TextProps extends RNTextProps {
   /** Typography variant preset */
   variant?: TypographyVariant;
   /** Text color variant */
@@ -29,7 +29,8 @@ interface TextProps extends RNTextProps {
   bold?: boolean;
   /** Make text medium weight */
   medium?: boolean;
-  children: React.ReactNode;
+  /** Content to render */
+  children?: React.ReactNode;
 }
 
 const colorMap: Record<TextColor, { light: string; dark: string }> = {

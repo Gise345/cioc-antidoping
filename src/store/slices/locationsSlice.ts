@@ -9,7 +9,7 @@
  * - competitions: Competition[]
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { LocationWithSchedule, Competition } from '../../types';
 import {
   saveHomeLocation,
@@ -528,23 +528,28 @@ export const selectCompetitionById = (id: string) => (state: { locations: Locati
   state.locations.competitions.find((c) => c.id === id);
 
 /**
- * Select location completion status
+ * Select location completion status (memoized)
  */
-export const selectLocationCompletionStatus = (state: { locations: LocationsState }): LocationCompletionStatus => {
-  const { homeLocation, trainingLocation, gymLocation } = state.locations;
+export const selectLocationCompletionStatus = createSelector(
+  [
+    (state: { locations: LocationsState }) => state.locations.homeLocation,
+    (state: { locations: LocationsState }) => state.locations.trainingLocation,
+    (state: { locations: LocationsState }) => state.locations.gymLocation,
+  ],
+  (homeLocation, trainingLocation, gymLocation): LocationCompletionStatus => {
+    const homeComplete = homeLocation !== null;
+    const trainingComplete = trainingLocation !== null;
+    const gymComplete = gymLocation !== null;
+    const allMandatoryComplete = homeComplete && trainingComplete;
 
-  const homeComplete = homeLocation !== null;
-  const trainingComplete = trainingLocation !== null;
-  const gymComplete = gymLocation !== null;
-  const allMandatoryComplete = homeComplete && trainingComplete;
-
-  return {
-    homeComplete,
-    trainingComplete,
-    gymComplete,
-    allMandatoryComplete,
-  };
-};
+    return {
+      homeComplete,
+      trainingComplete,
+      gymComplete,
+      allMandatoryComplete,
+    };
+  }
+);
 
 /**
  * Select loading state

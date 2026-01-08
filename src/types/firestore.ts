@@ -11,10 +11,11 @@ import { Timestamp } from 'firebase/firestore';
 
 /**
  * Base document interface with common fields
+ * Note: Timestamps can be Firestore Timestamp objects or ISO strings (after serialization)
  */
 export interface BaseDocument {
-  created_at: Timestamp;
-  updated_at: Timestamp;
+  created_at: Timestamp | string;
+  updated_at: Timestamp | string;
 }
 
 /**
@@ -35,7 +36,7 @@ export interface UserDocument extends BaseDocument {
   phone_verified: boolean;
   is_active: boolean;
   requires_password_change: boolean;
-  last_login_at?: Timestamp;
+  last_login_at?: Timestamp | string;
   fcm_tokens?: string[]; // Firebase Cloud Messaging tokens
 }
 

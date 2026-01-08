@@ -8,13 +8,11 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Pressable,
   RefreshControl,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Text,
   Card,
@@ -28,7 +26,7 @@ import {
   BorderRadius,
 } from '@/src/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AppDispatch } from '@/src/store/store';
+import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import {
   fetchAllLocationsAsync,
   selectHomeLocation,
@@ -54,14 +52,14 @@ export default function LocationsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = colorScheme === 'light' ? LightColors : DarkColors;
   const insets = useSafeAreaInsets();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
-  const user = useSelector(selectUser);
-  const homeLocation = useSelector(selectHomeLocation);
-  const trainingLocation = useSelector(selectTrainingLocation);
-  const gymLocation = useSelector(selectGymLocation);
-  const loading = useSelector(selectLocationsLoading);
-  const completionStatus = useSelector(selectLocationCompletionStatus);
+  const user = useAppSelector(selectUser);
+  const homeLocation = useAppSelector(selectHomeLocation);
+  const trainingLocation = useAppSelector(selectTrainingLocation);
+  const gymLocation = useAppSelector(selectGymLocation);
+  const loading = useAppSelector(selectLocationsLoading);
+  const completionStatus = useAppSelector(selectLocationCompletionStatus);
 
   const [refreshing, setRefreshing] = useState(false);
 

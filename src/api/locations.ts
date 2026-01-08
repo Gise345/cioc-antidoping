@@ -270,14 +270,14 @@ const handleFirestoreError = (error: unknown): LocationServiceError => {
     return {
       code: firestoreError.code,
       message: errorMessages[firestoreError.code] || firestoreError.message || 'An unexpected error occurred',
-      originalError: error,
+      // Don't store originalError - it's not serializable
     };
   }
 
   return {
     code: 'unknown',
-    message: 'An unexpected error occurred',
-    originalError: error,
+    message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    // Don't store originalError - it's not serializable
   };
 };
 

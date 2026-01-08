@@ -184,13 +184,13 @@ export default function AddLocationScreen() {
 
           <Card style={styles.formCard}>
             <View style={styles.inputGroup}>
-              <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+              <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                 Street Address *
               </Text>
               <TextInput
                 style={[
                   styles.input,
-                  { backgroundColor: colors.surface, color: colors.text },
+                  { backgroundColor: colors.surface, color: colors.textPrimary },
                   errors.addressLine1 && styles.inputError,
                 ]}
                 placeholder="123 Main Street"
@@ -207,11 +207,11 @@ export default function AddLocationScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+              <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                 Address Line 2
               </Text>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]}
                 placeholder="Apt, Suite, Unit, etc. (optional)"
                 placeholderTextColor={colors.textTertiary}
                 value={addressLine2}
@@ -221,13 +221,13 @@ export default function AddLocationScreen() {
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, styles.flex1]}>
-                <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+                <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                   City *
                 </Text>
                 <TextInput
                   style={[
                     styles.input,
-                    { backgroundColor: colors.surface, color: colors.text },
+                    { backgroundColor: colors.surface, color: colors.textPrimary },
                     errors.city && styles.inputError,
                   ]}
                   placeholder="George Town"
@@ -246,11 +246,11 @@ export default function AddLocationScreen() {
               <View style={styles.spacer} />
 
               <View style={[styles.inputGroup, styles.flex1]}>
-                <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+                <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                   Postal Code
                 </Text>
                 <TextInput
-                  style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                  style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]}
                   placeholder="KY1-1234"
                   placeholderTextColor={colors.textTertiary}
                   value={postalCode}
@@ -260,11 +260,11 @@ export default function AddLocationScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+              <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                 Country
               </Text>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]}
                 placeholder="Cayman Islands"
                 placeholderTextColor={colors.textTertiary}
                 value={country}
@@ -280,14 +280,14 @@ export default function AddLocationScreen() {
 
           <Card style={styles.formCard}>
             <View style={styles.inputGroup}>
-              <Text variant="bodySmall" color="secondary" style={styles.inputLabel}>
+              <Text variant="bodySmall" style={[styles.inputLabel, { color: '#000000' }]}>
                 Additional Information
               </Text>
               <TextInput
                 style={[
                   styles.input,
                   styles.textArea,
-                  { backgroundColor: colors.surface, color: colors.text },
+                  { backgroundColor: colors.surface, color: colors.textPrimary },
                 ]}
                 placeholder="Gate codes, parking info, building details..."
                 placeholderTextColor={colors.textTertiary}

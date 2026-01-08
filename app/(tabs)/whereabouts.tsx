@@ -45,7 +45,7 @@ import {
   selectWhereaboutsLoading,
   QuarterWithId,
 } from '@/src/store/slices/whereaboutsSlice';
-import { selectUser } from '@/src/store/slices/authSlice';
+import { selectUser, selectIsInitialized, selectIsAuthenticated } from '@/src/store/slices/authSlice';
 import { QuarterName } from '@/src/types/firestore';
 
 type FilterOption = 'all' | 'active' | 'submitted' | 'locked';
@@ -95,24 +95,26 @@ export default function WhereaboutsScreen() {
   const user = useSelector(selectUser);
   const quarters = useSelector(selectQuarters);
   const loading = useSelector(selectWhereaboutsLoading);
+  const isInitialized = useSelector(selectIsInitialized);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const [filter, setFilter] = useState<FilterOption>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch quarters on mount
+  // Fetch quarters on mount - only after auth is fully initialized
   useEffect(() => {
-    if (user?.uid) {
+    if (isInitialized && isAuthenticated && user?.uid) {
       dispatch(fetchQuartersAsync(user.uid));
     }
-  }, [user?.uid, dispatch]);
+  }, [isInitialized, isAuthenticated, user?.uid, dispatch]);
 
   // Refresh handler
   const onRefresh = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!isAuthenticated || !user?.uid) return;
     setRefreshing(true);
     await dispatch(fetchQuartersAsync(user.uid));
     setRefreshing(false);
-  }, [user?.uid, dispatch]);
+  }, [isAuthenticated, user?.uid, dispatch]);
 
   // Filter quarters
   const filteredQuarters = useMemo(() => {
